@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"github.com/labstack/echo"
-	"github.com/eklemen/bogo_alert/models"
-	"net/http"
 	"github.com/eklemen/bogo_alert/config"
+	"github.com/eklemen/bogo_alert/models"
+	"github.com/labstack/echo"
+	"net/http"
 )
 
 func Register(c echo.Context) error {

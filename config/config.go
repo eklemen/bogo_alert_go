@@ -14,9 +14,7 @@ func Open() error {
 		"host="+os.Getenv("DB_HOST")+" user="+os.Getenv("DB_USERNAME")+
 			" dbname="+os.Getenv("DB_DATABASE")+" sslmode=disable password="+
 			os.Getenv("DB_PASSWORD"))
-	if err != nil {
-		return err
-	}
+	return err
 }
 
 func Close() error {

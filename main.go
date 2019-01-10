@@ -1,26 +1,25 @@
 package main
 
 import (
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/gorilla/sessions"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	//"github.com/markbates/goth"
 	//"github.com/markbates/goth/gothic"
-	"github.com/subosito/gotenv"
-	"os"
-	"github.com/eklemen/bogo_alert/models"
-	"github.com/eklemen/bogo_alert/config"
-	"net/http"
 	"fmt"
+	"github.com/eklemen/bogo_alert/config"
+	"github.com/eklemen/bogo_alert/models"
+	"github.com/subosito/gotenv"
+	"net/http"
+	"os"
 )
 
 //var db *gorm.DB
 
-func helloHandler (c echo.Context) error {
+func helloHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, "hi")
 }
-
 
 func main() {
 	gotenv.Load()
@@ -59,10 +58,8 @@ func main() {
 	store.Options.HttpOnly = true // HttpOnly should always be enabled
 	store.Options.Secure = false
 
-
 	// Routes //
 	e.GET("/hi", helloHandler)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
