@@ -8,7 +8,8 @@ import (
 	//"github.com/markbates/goth"
 	//"github.com/markbates/goth/gothic"
 	"fmt"
-	"github.com/eklemen/bogo_alert/config"
+	"github.com/eklemen/bogo_alert/app"
+	"github.com/eklemen/bogo_alert/controllers"
 	"github.com/eklemen/bogo_alert/models"
 	"github.com/subosito/gotenv"
 	"net/http"
@@ -25,17 +26,17 @@ func main() {
 	gotenv.Load()
 	// Dont forget to add postgres adapter to imports
 	// _ "github.com/jinzhu/gorm/dialects/postgres"
-	if err := config.Open(); err != nil {
+	if err := app.Open(); err != nil {
 		panic("failed to connect database")
 	} else {
 		fmt.Println("DB Connected...")
 	}
-	defer config.DB.Close()
+	defer app.DB.Close()
 
 	// TODO: create a struct for these
-	config.DB.LogMode(true)
+	app.DB.LogMode(true)
 	// Migrate the schema
-	config.DB.AutoMigrate(&models.User{})
+	app.DB.AutoMigrate(&models.User{})
 
 	e := echo.New()
 	e.Debug = true
@@ -60,6 +61,8 @@ func main() {
 
 	// Routes //
 	e.GET("/hi", helloHandler)
+	e.POST("/register", controllers.Register)
+	e.POST("/login", controllers.Login)
 
 	// Start server
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
