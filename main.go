@@ -1,26 +1,18 @@
 package main
 
 import (
+	"fmt"
+	"github.com/eklemen/bogo_alert/app"
+	"github.com/eklemen/bogo_alert/controllers"
+	"github.com/eklemen/bogo_alert/middlewares"
+	"github.com/eklemen/bogo_alert/models"
 	"github.com/gorilla/sessions"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	//"github.com/markbates/goth"
-	//"github.com/markbates/goth/gothic"
-	"fmt"
-	"github.com/eklemen/bogo_alert/app"
-	"github.com/eklemen/bogo_alert/controllers"
-	"github.com/eklemen/bogo_alert/models"
 	"github.com/subosito/gotenv"
-	"net/http"
 	"os"
 )
-
-//var db *gorm.DB
-
-func helloHandler(c echo.Context) error {
-	return c.JSON(http.StatusOK, "hi")
-}
 
 func main() {
 	gotenv.Load()
@@ -60,9 +52,12 @@ func main() {
 	store.Options.Secure = false
 
 	// Routes //
-	e.GET("/hi", helloHandler)
 	e.POST("/register", controllers.Register)
 	e.POST("/login", controllers.Login)
+
+	u := e.Group("/api")
+	u.Use(middleware.JWT([]byte(os.Getenv("JWT_SECRET"))))
+	u.Use(middlewares.LoadUserIntoContext)
 
 	// Start server
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
