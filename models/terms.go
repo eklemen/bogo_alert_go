@@ -3,6 +3,6 @@ package models
 type (
 	Term struct {
 		ID      int    `json:"-"`
-		keyword string `json:"keyword"`
+		Keyword string `json:"keyword"`
 	}
 )

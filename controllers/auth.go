@@ -68,6 +68,8 @@ func AssignToken(u models.User) (*UserWithToken, error) {
 	if err != nil {
 		return nil, err
 	}
+	//u.Token = t
+	//app.DB.Update(&u)
 	return &UserWithToken{User: &u, Token: t}, nil
 }
 
@@ -85,7 +87,10 @@ func Login(c echo.Context) error {
 	if f.RecordNotFound() {
 		return c.JSON(http.StatusNotFound, "User is not registered.")
 	}
+	fmt.Println("r.pass", r.Password)
+	fmt.Println("u.pass", u.Password)
 	if CheckPasswordHash(r.Password, u.Password) {
+		fmt.Println("same-----")
 		res, err := AssignToken(*u)
 		if err != nil {
 			return err

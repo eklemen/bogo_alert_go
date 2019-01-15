@@ -7,14 +7,15 @@ import (
 
 type (
 	User struct {
-		ID          int        `json:"-"`
-		Uuid        uuid.UUID  `json:"uuid"`
-		Email       string     `json:"email"`
-		Password    string     `json:"-"`
-		Phone       string     `json:"phone"`
-		ZipCode     string     `json:"zipCode"`
-		SearchTerms []*Term    `json:"terms" gorm:"many2many:user_terms"`
-		DeletedAt   *time.Time `json:"-"`
+		ID        int        `json:"-"`
+		Uuid      uuid.UUID  `json:"uuid"`
+		Email     string     `json:"email"`
+		Token     string     `json:"token"`
+		Password  string     `json:"-"`
+		Phone     string     `json:"phone"`
+		ZipCode   string     `json:"zipCode"`
+		Terms     []*Term    `json:"terms" gorm:"many2many:user_terms"`
+		DeletedAt *time.Time `json:"-"`
 	}
 )
 
@@ -27,6 +28,6 @@ type (
 
 func NewUser() *User {
 	return &User{
-		SearchTerms: []*Term{},
+		Terms: []*Term{},
 	}
 }
