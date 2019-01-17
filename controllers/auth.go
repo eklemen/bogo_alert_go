@@ -13,22 +13,30 @@ import (
 )
 
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	fmt.Println("-=-=-=-=-=-=-=-", string(bytes))
 	return string(bytes), err
 }
 
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	fmt.Println("ERROR:::::", err)
 	return err == nil
 }
 
 func Register(c echo.Context) error {
+	req := struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		ZipCode  string `json:"zipCode"`
+		Phone    string `json:"phone"`
+	}{}
 	u := models.NewUser()
 
-	if err := c.Bind(u); err != nil {
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
-	hash, err := HashPassword(u.Password)
+	hash, err := HashPassword(req.Password)
 
 	if err != nil {
 		return err
@@ -36,13 +44,16 @@ func Register(c echo.Context) error {
 
 	f := app.DB.Where(
 		&models.User{
-			Email: u.Email,
+			Email: req.Email,
 		}).First(&u)
 
-	uid, _ := uuid.NewV4()
 	if f.RecordNotFound() {
+		uid, _ := uuid.NewV4()
 		u.Uuid = uid
 		u.Password = hash
+		u.Email = req.Email
+		u.ZipCode = req.ZipCode
+		u.Phone = req.Phone
 
 		app.DB.Create(&u)
 		return c.JSON(http.StatusOK, u)
@@ -64,34 +75,36 @@ func AssignToken(u models.User) (*UserWithToken, error) {
 	// Set claims (the DB id is encoded below)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = u.ID
+	claims["user"] = u
 	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		return nil, err
 	}
-	//u.Token = t
-	//app.DB.Update(&u)
 	return &UserWithToken{User: &u, Token: t}, nil
 }
 
 func Login(c echo.Context) error {
-	r := &models.Credentails{}
-	if err := c.Bind(r); err != nil {
+	req := struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}{}
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
-	fmt.Println("u.Password", r.Password)
 
-	u := &models.User{Email: r.Email}
+	u := &models.User{Email: req.Email}
+	us := models.NewUser()
+	u.Email = req.Email
 	f := app.DB.
-		Where(u).First(&u)
+		Preload("Terms").
+		Where(u).
+		First(&us)
 
 	if f.RecordNotFound() {
 		return c.JSON(http.StatusNotFound, "User is not registered.")
 	}
-	fmt.Println("r.pass", r.Password)
-	fmt.Println("u.pass", u.Password)
-	if CheckPasswordHash(r.Password, u.Password) {
-		fmt.Println("same-----")
-		res, err := AssignToken(*u)
+	if CheckPasswordHash(req.Password, us.Password) {
+		res, err := AssignToken(*us)
 		if err != nil {
 			return err
 		}

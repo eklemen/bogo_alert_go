@@ -29,6 +29,7 @@ func main() {
 	app.DB.LogMode(true)
 	// Migrate the schema
 	app.DB.AutoMigrate(&models.User{})
+	app.DB.AutoMigrate(&models.Term{})
 
 	e := echo.New()
 	e.Debug = true
