@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/eklemen/bogo_alert/app"
 	"github.com/eklemen/bogo_alert/models"
@@ -14,13 +13,11 @@ import (
 
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	fmt.Println("-=-=-=-=-=-=-=-", string(bytes))
 	return string(bytes), err
 }
 
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	fmt.Println("ERROR:::::", err)
 	return err == nil
 }
 
@@ -69,18 +66,20 @@ type (
 	}
 )
 
-func AssignToken(u models.User) (*UserWithToken, error) {
+func AssignToken(u models.User) (*models.User, error) {
 	// Create token
 	token := jwt.New(jwt.SigningMethodHS256)
 	// Set claims (the DB id is encoded below)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = u.ID
-	claims["user"] = u
 	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		return nil, err
 	}
-	return &UserWithToken{User: &u, Token: t}, nil
+	u.Token = t
+	app.DB.Save(&u)
+	//return &UserWithToken{User: &u, Token: t}, nil
+	return &u, nil
 }
 
 func Login(c echo.Context) error {
@@ -111,4 +110,11 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusOK, res)
 	}
 	return c.JSON(http.StatusUnauthorized, "Incorrect email or password.")
+}
+
+func Logout(c echo.Context) error {
+	uid := c.Get("userId").(int)
+	u := &models.User{ID: uid}
+	app.DB.Model(&u).Update("token", "")
+	return c.JSON(http.StatusNoContent, "")
 }

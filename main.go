@@ -59,7 +59,10 @@ func main() {
 	u := e.Group("/api")
 	u.Use(middleware.JWT([]byte(os.Getenv("JWT_SECRET"))))
 	u.Use(middlewares.LoadUserIntoContext)
-	u.POST("searchTerms", controllers.UpdateSearchTerms)
+	u.POST("/logout", controllers.Logout)
+	u.GET("/user", controllers.GetUser)
+	u.PUT("/user", controllers.UpdateUser)
+	u.POST("/terms", controllers.UpdateSearchTerms)
 
 	// Start server
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
