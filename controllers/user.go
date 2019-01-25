@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/eklemen/bogo_alert/app"
 	"github.com/eklemen/bogo_alert/models"
 	"github.com/labstack/echo"
@@ -14,7 +13,6 @@ func UpdateSearchTerms(c echo.Context) error {
 	u := &models.User{ID: uid}
 	app.DB.Where(u).First(&u)
 
-	fmt.Println("------", u)
 	req := struct {
 		Terms []string `json:"terms"`
 	}{}
@@ -39,7 +37,6 @@ func UpdateSearchTerms(c echo.Context) error {
 	for _, t := range req.Terms {
 		terms = append(terms, models.Term{Keyword: t})
 	}
-	fmt.Println("UID", uid)
 
 	app.DB.Model(&u).Association("Terms").Replace(terms)
 
@@ -49,7 +46,9 @@ func UpdateSearchTerms(c echo.Context) error {
 func GetUser(c echo.Context) error {
 	uid := c.Get("userId").(int)
 	u := &models.User{ID: uid}
-	app.DB.Preload("Terms").Where(&u).First(u)
+	app.DB.Preload("Terms").
+		Preload("Store").
+		Where(&u).First(u)
 
 	return c.JSON(http.StatusOK, u)
 }
@@ -57,9 +56,10 @@ func GetUser(c echo.Context) error {
 func UpdateUser(c echo.Context) error {
 	uid := c.Get("userId").(int)
 	req := struct {
-		Email   string `json:"email"`
-		ZipCode string `json:"zipCode"`
-		Phone   string `json:"phone"`
+		Email         string `json:"email"`
+		ZipCode       string `json:"zipCode"`
+		Phone         string `json:"phone"`
+		PublixStoreId string `json:"publixStoreId"`
 	}{}
 
 	if err := c.Bind(&req); err != nil {
@@ -68,13 +68,40 @@ func UpdateUser(c echo.Context) error {
 
 	u := &models.User{ID: uid}
 	app.DB.Model(&u).Updates(models.User{
-		ZipCode: req.ZipCode,
-		Email:   req.Email,
-		Phone:   req.Phone,
+		ZipCode:       req.ZipCode,
+		Email:         req.Email,
+		Phone:         req.Phone,
+		PublixStoreId: req.PublixStoreId,
 	})
 
 	res := &models.User{ID: uid}
-	app.DB.Preload("Terms").First(&res)
+	app.DB.Preload("Terms").
+		Preload("Store").
+		First(&res)
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func UpdateUserStore(c echo.Context) error {
+	uid := c.Get("userId").(int)
+
+	s := &models.Store{}
+	u := &models.User{ID: uid}
+
+	if err := c.Bind(&s); err != nil {
+		return err
+	}
+
+	i := app.DB.Where(models.Store{StoreNum: s.StoreNum}).
+		FirstOrCreate(&s)
+	if i.Error != nil {
+		return i.Error
+	}
+	app.DB.Model(&u).Update("StoreID", s.ID)
+
+	app.DB.Preload("Terms").
+		Preload("Store").
+		First(&u)
+
+	return c.JSON(http.StatusOK, u)
 }

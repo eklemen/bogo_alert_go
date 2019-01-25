@@ -23,10 +23,12 @@ func CheckPasswordHash(password, hash string) bool {
 
 func Register(c echo.Context) error {
 	req := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		ZipCode  string `json:"zipCode"`
-		Phone    string `json:"phone"`
+		Email      string `json:"email"`
+		Password   string `json:"password"`
+		ZipCode    string `json:"zipCode"`
+		Phone      string `json:"phone"`
+		EmailOptIn bool   `json:"emailOptIn"`
+		TextOptIn  bool   `json:"textOptIn"`
 	}{}
 	u := models.NewUser()
 
@@ -49,8 +51,15 @@ func Register(c echo.Context) error {
 		u.Uuid = uid
 		u.Password = hash
 		u.Email = req.Email
-		u.ZipCode = req.ZipCode
+		u.EmailOptIn = req.EmailOptIn
+		u.TextOptIn = req.TextOptIn
 		u.Phone = req.Phone
+
+		res, err := AssignToken(*u)
+		if err != nil {
+			return err
+		}
+		u.Token = res.Token
 
 		app.DB.Create(&u)
 		return c.JSON(http.StatusOK, u)
@@ -77,8 +86,6 @@ func AssignToken(u models.User) (*models.User, error) {
 		return nil, err
 	}
 	u.Token = t
-	app.DB.Save(&u)
-	//return &UserWithToken{User: &u, Token: t}, nil
 	return &u, nil
 }
 
@@ -107,6 +114,7 @@ func Login(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		app.DB.Save(&res)
 		return c.JSON(http.StatusOK, res)
 	}
 	return c.JSON(http.StatusUnauthorized, "Incorrect email or password.")

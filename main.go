@@ -30,6 +30,7 @@ func main() {
 	// Migrate the schema
 	app.DB.AutoMigrate(&models.User{})
 	app.DB.AutoMigrate(&models.Term{})
+	app.DB.AutoMigrate(&models.Store{})
 
 	e := echo.New()
 	e.Debug = true
@@ -62,7 +63,9 @@ func main() {
 	u.POST("/logout", controllers.Logout)
 	u.GET("/user", controllers.GetUser)
 	u.PUT("/user", controllers.UpdateUser)
+	u.POST("/user/store", controllers.UpdateUserStore)
 	u.POST("/terms", controllers.UpdateSearchTerms)
+	u.POST("/stores", controllers.GetStoresByZip)
 
 	// Start server
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
