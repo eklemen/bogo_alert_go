@@ -56,10 +56,9 @@ func GetUser(c echo.Context) error {
 func UpdateUser(c echo.Context) error {
 	uid := c.Get("userId").(int)
 	req := struct {
-		Email         string `json:"email"`
-		ZipCode       string `json:"zipCode"`
-		Phone         string `json:"phone"`
-		PublixStoreId string `json:"publixStoreId"`
+		Email   string `json:"email"`
+		ZipCode string `json:"zipCode"`
+		Phone   string `json:"phone"`
 	}{}
 
 	if err := c.Bind(&req); err != nil {
@@ -68,10 +67,9 @@ func UpdateUser(c echo.Context) error {
 
 	u := &models.User{ID: uid}
 	app.DB.Model(&u).Updates(models.User{
-		ZipCode:       req.ZipCode,
-		Email:         req.Email,
-		Phone:         req.Phone,
-		PublixStoreId: req.PublixStoreId,
+		ZipCode: req.ZipCode,
+		Email:   req.Email,
+		Phone:   req.Phone,
 	})
 
 	res := &models.User{ID: uid}
