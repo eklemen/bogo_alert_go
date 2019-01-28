@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/eklemen/bogo_alert/app"
 	"github.com/eklemen/bogo_alert/models"
 	"github.com/labstack/echo"
@@ -11,7 +12,10 @@ import (
 func UpdateSearchTerms(c echo.Context) error {
 	uid := c.Get("userId").(int)
 	u := &models.User{ID: uid}
-	app.DB.Where(u).First(&u)
+	app.DB.Preload("Terms").
+		Preload("Store").
+		Where(u).
+		First(&u)
 
 	req := struct {
 		Terms []string `json:"terms"`
@@ -95,6 +99,7 @@ func UpdateUserStore(c echo.Context) error {
 	if i.Error != nil {
 		return i.Error
 	}
+	fmt.Println("SID::::::", s.ID)
 	app.DB.Model(&u).Update("StoreID", s.ID)
 
 	app.DB.Preload("Terms").
