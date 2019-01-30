@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/eklemen/bogo_alert/app"
 	"github.com/eklemen/bogo_alert/models"
 	"github.com/labstack/echo"
@@ -99,7 +98,6 @@ func UpdateUserStore(c echo.Context) error {
 	if i.Error != nil {
 		return i.Error
 	}
-	fmt.Println("SID::::::", s.ID)
 	app.DB.Model(&u).Update("StoreID", s.ID)
 
 	app.DB.Preload("Terms").
