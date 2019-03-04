@@ -41,6 +41,11 @@ func UpdateSearchTerms(c echo.Context) error {
 		terms = append(terms, models.Term{Keyword: t})
 	}
 
+	// get all terms in db that match the given array
+	// build out 2 arrays (will be 2 nested loops)
+	// one array hold what will be added
+	// one array will be what to remove
+
 	app.DB.Model(&u).Association("Terms").Replace(terms)
 
 	return c.JSON(http.StatusOK, u)
@@ -105,4 +110,11 @@ func UpdateUserStore(c echo.Context) error {
 		First(&u)
 
 	return c.JSON(http.StatusOK, u)
+}
+
+func GetStoreIds(c echo.Context) error {
+	s := models.Term{}
+	app.DB.Find(&s)
+
+	return c.JSON(http.StatusOK, s)
 }

@@ -44,3 +44,21 @@ func GetStoresByZip(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, resSt)
 }
+
+func TypeAhead(c echo.Context) error {
+	t := c.Param("term")
+	url := "http://services.publix.com/api/v1/Suggestion?keyword="
+	u := fmt.Sprintf("%s%v", url, t)
+
+	r, _ := http.Get(u)
+	resData, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	var res []string
+	json.Unmarshal(resData, &res)
+
+	return c.JSON(http.StatusOK, res)
+}
