@@ -8,12 +8,31 @@ import (
 	"strings"
 )
 
+func inList(checkItem string, list []string) bool {
+	clean := func(s string) string {
+		return strings.ToLower(strings.TrimSpace(s))
+	}
+	found := false
+	for _, i := range list {
+		if clean(checkItem) == clean(i) {
+			found = true
+		}
+	}
+	return found
+}
+
+func termsToStrings(terms []*models.Term) []string {
+	strs := []string{}
+	for _, t := range terms {
+		strs = append(strs, t.Keyword)
+	}
+	return strs
+}
+
 func UpdateSearchTerms(c echo.Context) error {
 	uid := c.Get("userId").(int)
 	u := &models.User{ID: uid}
 	app.DB.Preload("Terms").
-		Preload("Store").
-		Where(u).
 		First(&u)
 
 	req := struct {
@@ -24,31 +43,41 @@ func UpdateSearchTerms(c echo.Context) error {
 		return err
 	}
 
+	// Add all new terms from the request
 	newTerms := []models.Term{}
-
-	for _, tstr := range req.Terms {
-		for _, tt := range u.Terms {
-			tstrK := strings.ToLower(strings.TrimSpace(tstr))
-			ttK := strings.ToLower(strings.TrimSpace(tt.Keyword))
-			if tstrK != ttK {
-				newTerms = append(newTerms, models.Term{Keyword: tstrK})
-			}
+	for _, reqTerm := range req.Terms {
+		if !inList(reqTerm, termsToStrings(u.Terms)) {
+			newTerms = append(newTerms, models.Term{Keyword: reqTerm})
 		}
 	}
 
-	terms := []models.Term{}
-	for _, t := range req.Terms {
-		terms = append(terms, models.Term{Keyword: t})
+	// Remove any terms not in the request
+	removeTerms := []models.Term{}
+	for _, currentTerm := range u.Terms {
+		if !inList(currentTerm.Keyword, req.Terms) {
+			removeTerms = append(removeTerms, models.Term{ID: currentTerm.ID})
+		}
 	}
 
-	// get all terms in db that match the given array
-	// build out 2 arrays (will be 2 nested loops)
-	// one array hold what will be added
-	// one array will be what to remove
+	// Create all new associations
+	for _, newTerm := range newTerms {
+		var term models.Term
+		// Already checked, just need to create
+		t := app.DB.FirstOrCreate(&term, newTerm)
+		if t.Error != nil {
+			app.DB.Rollback()
+			panic(t.Error)
+			return t.Error
+		}
+		app.DB.Model(&u).Association("Terms").Append(term)
+	}
 
-	app.DB.Model(&u).Association("Terms").Replace(terms)
+	// Remove all old associations
+	if len(removeTerms) != 0 {
+		app.DB.Model(&u).Association("Terms").Delete(removeTerms)
+	}
 
-	return c.JSON(http.StatusOK, u)
+	return c.JSON(http.StatusOK, u.Terms)
 }
 
 func GetUser(c echo.Context) error {
@@ -59,6 +88,14 @@ func GetUser(c echo.Context) error {
 		Where(&u).First(u)
 
 	return c.JSON(http.StatusOK, u)
+}
+
+func GetUserTerms(c echo.Context) error {
+	uid := c.Get("userId").(int)
+	u := &models.User{ID: uid, Terms: []*models.Term{}}
+	app.DB.Preload("Terms").First(&u)
+
+	return c.JSON(http.StatusOK, u.Terms)
 }
 
 func UpdateUser(c echo.Context) error {
@@ -110,11 +147,4 @@ func UpdateUserStore(c echo.Context) error {
 		First(&u)
 
 	return c.JSON(http.StatusOK, u)
-}
-
-func GetStoreIds(c echo.Context) error {
-	s := models.Term{}
-	app.DB.Find(&s)
-
-	return c.JSON(http.StatusOK, s)
 }

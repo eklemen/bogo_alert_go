@@ -31,6 +31,8 @@ func main() {
 	app.DB.AutoMigrate(&models.User{})
 	app.DB.AutoMigrate(&models.Term{})
 	app.DB.AutoMigrate(&models.Store{})
+	app.DB.AutoMigrate(&models.Scrapedstore{})
+	app.DB.AutoMigrate(&models.Deal{})
 
 	e := echo.New()
 	e.Debug = true
@@ -65,12 +67,12 @@ func main() {
 	u.PUT("/user", controllers.UpdateUser)
 	u.POST("/user/store", controllers.UpdateUserStore)
 	u.POST("/terms", controllers.UpdateSearchTerms)
-	u.GET("/terms", controllers.GetStoreIds)
+	u.GET("/terms/self", controllers.GetUserTerms)
 	u.GET("/terms/search/:term", controllers.TypeAhead)
 	u.POST("/stores", controllers.GetStoresByZip)
 
-	//p := e.Group("/s")
-	//p.POST("/storesDeals", controllers.SetStoresDeals)
+	p := e.Group("/s")
+	p.POST("/storeDeals", controllers.SetStoresDeals)
 
 	// Start server
 	e.Logger.Fatal(e.Start(os.Getenv("SERVER_PORT")))
