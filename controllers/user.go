@@ -65,8 +65,6 @@ func UpdateSearchTerms(c echo.Context) error {
 		// Already checked, just need to create
 		t := app.DB.FirstOrCreate(&term, newTerm)
 		if t.Error != nil {
-			app.DB.Rollback()
-			panic(t.Error)
 			return t.Error
 		}
 		app.DB.Model(&u).Association("Terms").Append(term)
